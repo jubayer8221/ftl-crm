@@ -7,6 +7,7 @@ import Table from '../ui/Table';
 import Badge from '../ui/Badge';
 import { Plus, Mail, Phone, Building, ArrowLeft } from 'lucide-react';
 import { dataService, Customer, Deal, Activity } from '../../data/dummyData';
+import { useToast } from '../ui/Toast';
 
 export default function Customers() {
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -23,6 +24,8 @@ export default function Customers() {
     address: '',
     industry: '',
   });
+
+  const { addToast } = useToast();
 
   useEffect(() => {
     loadCustomers();
@@ -51,32 +54,43 @@ export default function Customers() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    await dataService.createCustomer(formData);
-    setIsModalOpen(false);
-    setFormData({
-      name: '',
-      email: '',
-      phone: '',
-      company: '',
-      address: '',
-      industry: '',
-    });
-    loadCustomers();
+
+    try {
+      await dataService.createCustomer(formData);
+      addToast('Customer created successfully!', 'success');
+      setIsModalOpen(false);
+      setFormData({
+        name: '',
+        email: '',
+        phone: '',
+        company: '',
+        address: '',
+        industry: '',
+      });
+      loadCustomers();
+    } catch {
+      addToast('An error occurred. Please try again.', 'error');
+    }
   }
 
   async function addActivity(type: string) {
     if (!selectedCustomer) return;
 
-    await dataService.createActivity({
-      type,
-      title: `${type.charAt(0).toUpperCase() + type.slice(1)} with ${selectedCustomer.name}`,
-      description: `Added new ${type} activity`,
-      related_to_type: 'customer',
-      related_to_id: selectedCustomer.id,
-      created_by: 'Admin User',
-    });
+    try {
+      await dataService.createActivity({
+        type,
+        title: `${type.charAt(0).toUpperCase() + type.slice(1)} with ${selectedCustomer.name}`,
+        description: `Added new ${type} activity`,
+        related_to_type: 'customer',
+        related_to_id: selectedCustomer.id,
+        created_by: 'Admin User',
+      });
 
-    loadCustomerDetails(selectedCustomer.id);
+      addToast(`${type.charAt(0).toUpperCase() + type.slice(1)} activity added!`, 'success');
+      loadCustomerDetails(selectedCustomer.id);
+    } catch {
+      addToast('Failed to add activity. Please try again.', 'error');
+    }
   }
 
   const filteredCustomers = customers.filter(
@@ -236,7 +250,7 @@ export default function Customers() {
 
         <Table
           columns={columns}
-          data={filteredCustomers}
+          data={filteredCustomers as unknown as Record<string, unknown>[]}
           onRowClick={(row) => setSelectedCustomer(row as unknown as Customer)}
         />
       </Card>

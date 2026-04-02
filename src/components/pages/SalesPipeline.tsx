@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import Card from '../ui/Card';
 import Button from '../ui/Button';
 import Modal from '../ui/Modal';
 import Input from '../ui/Input';
@@ -7,6 +6,7 @@ import Select from '../ui/Select';
 import Badge from '../ui/Badge';
 import { Plus, DollarSign } from 'lucide-react';
 import { dataService, Deal, Customer } from '../../data/dummyData';
+import { useToast } from '../ui/Toast';
 
 const STAGES = [
   { id: 'new', label: 'New', color: 'bg-gray-100' },
@@ -22,6 +22,7 @@ export default function SalesPipeline() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [draggedDeal, setDraggedDeal] = useState<Deal | null>(null);
+  const { addToast } = useToast();
   const [formData, setFormData] = useState({
     title: '',
     value: '',
@@ -49,27 +50,32 @@ export default function SalesPipeline() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
-    await dataService.createDeal({
-      title: formData.title,
-      value: parseFloat(formData.value),
-      customer_id: formData.customer_id || undefined,
-      status: formData.status,
-      assigned_to: formData.assigned_to,
-      probability: parseInt(formData.probability),
-      expected_close_date: formData.expected_close_date || undefined,
-    });
+    try {
+      await dataService.createDeal({
+        title: formData.title,
+        value: parseFloat(formData.value),
+        customer_id: formData.customer_id || undefined,
+        status: formData.status,
+        assigned_to: formData.assigned_to,
+        probability: parseInt(formData.probability),
+        expected_close_date: formData.expected_close_date || undefined,
+      });
 
-    setIsModalOpen(false);
-    setFormData({
-      title: '',
-      value: '',
-      customer_id: '',
-      status: 'new',
-      assigned_to: '',
-      probability: '50',
-      expected_close_date: '',
-    });
-    loadData();
+      addToast('Deal created successfully!', 'success');
+      setIsModalOpen(false);
+      setFormData({
+        title: '',
+        value: '',
+        customer_id: '',
+        status: 'new',
+        assigned_to: '',
+        probability: '50',
+        expected_close_date: '',
+      });
+      loadData();
+    } catch {
+      addToast('An error occurred. Please try again.', 'error');
+    }
   }
 
   async function updateDealStatus(dealId: string, newStatus: string) {

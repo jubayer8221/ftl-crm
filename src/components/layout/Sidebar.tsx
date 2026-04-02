@@ -34,7 +34,7 @@ export default function Sidebar({ currentPage, onNavigate }: SidebarProps) {
         </button>
       </div>
 
-      <nav className="flex-1 px-3">
+      <nav className="flex-1 px-3 items-center">
         {menuItems.map((item) => {
           const Icon = item.icon;
           const isActive = currentPage === item.id;
@@ -43,9 +43,10 @@ export default function Sidebar({ currentPage, onNavigate }: SidebarProps) {
             <button
               key={item.id}
               onClick={() => onNavigate(item.id)}
-              className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg mb-1 transition-colors ${isActive
-                ? 'bg-blue-600 text-white'
-                : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+              className={`w-full flex items-center py-3 rounded-lg mb-1 transition-colors ${isCollapsed ? 'justify-center px-0' : 'gap-3 px-3'
+                } ${isActive
+                  ? 'bg-blue-600 text-white'
+                  : 'text-gray-300 hover:bg-gray-800 hover:text-white'
                 }`}
             >
               <Icon size={20} />
@@ -56,8 +57,8 @@ export default function Sidebar({ currentPage, onNavigate }: SidebarProps) {
       </nav>
 
       {!isCollapsed && (
-        <div className="p-4 border-t border-gray-800">
-          <div className="flex items-center gap-3">
+        <div className="p-4 border-t justify-center  border-gray-800">
+          <div className="flex items-center gap-3 ">
             <div className="w-10 h-10 bg-gray-700 rounded-full flex items-center justify-center">
               <UserCircle size={24} />
             </div>

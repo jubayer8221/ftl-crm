@@ -7,6 +7,7 @@ import Select from '../ui/Select';
 import Badge from '../ui/Badge';
 import { Plus, CheckCircle2, Circle, Clock } from 'lucide-react';
 import { dataService } from '../../data/dummyData';
+import { useToast } from '../ui/Toast';
 
 interface Task {
   id: string;
@@ -36,6 +37,7 @@ export default function Tasks() {
     assigned_to: '',
     related_to_type: '',
   });
+  const { addToast } = useToast();
 
   useEffect(() => {
     loadTasks();
@@ -68,19 +70,23 @@ export default function Tasks() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
-    await dataService.createTask(formData);
-
-    setIsModalOpen(false);
-    setFormData({
-      title: '',
-      description: '',
-      status: 'pending',
-      priority: 'medium',
-      due_date: '',
-      assigned_to: '',
-      related_to_type: '',
-    });
-    loadTasks();
+    try {
+      await dataService.createTask(formData);
+      addToast('Task created successfully!', 'success');
+      setIsModalOpen(false);
+      setFormData({
+        title: '',
+        description: '',
+        status: 'pending',
+        priority: 'medium',
+        due_date: '',
+        assigned_to: '',
+        related_to_type: '',
+      });
+      loadTasks();
+    } catch {
+      addToast('An error occurred. Please try again.', 'error');
+    }
   }
 
   async function toggleTaskStatus(task: Task) {

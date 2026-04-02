@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import Card, { CardHeader } from '../ui/Card';
+import { useEffect, useState, useCallback } from 'react';
+import Card from '../ui/Card';
 import Button from '../ui/Button';
 import Modal from '../ui/Modal';
 import Input from '../ui/Input';
@@ -8,6 +8,7 @@ import Table from '../ui/Table';
 import Badge from '../ui/Badge';
 import { Plus, Filter } from 'lucide-react';
 import { dataService, Lead } from '../../data/dummyData';
+import { useToast } from '../ui/Toast';
 
 interface LeadFormData {
   name: string;
@@ -39,20 +40,13 @@ export default function Leads() {
     notes: '',
   });
 
+  const { addToast } = useToast();
+
   useEffect(() => {
     loadLeads();
   }, []);
 
-  useEffect(() => {
-    filterLeads();
-  }, [leads, searchTerm, filterStatus, filterSource]);
-
-  async function loadLeads() {
-    const data = await dataService.getLeads();
-    setLeads(data);
-  }
-
-  function filterLeads() {
+  const filterLeads = useCallback(() => {
     let filtered = [...leads];
 
     if (searchTerm) {
@@ -73,6 +67,15 @@ export default function Leads() {
     }
 
     setFilteredLeads(filtered);
+  }, [leads, searchTerm, filterStatus, filterSource]);
+
+  useEffect(() => {
+    filterLeads();
+  }, [filterLeads]);
+
+  async function loadLeads() {
+    const data = await dataService.getLeads();
+    setLeads(data);
   }
 
   function openModal(lead?: Lead) {
@@ -112,32 +115,38 @@ export default function Leads() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
-    if (editingLead) {
-      await dataService.updateLead(editingLead.id, {
-        name: formData.name,
-        email: formData.email,
-        phone: formData.phone,
-        company: formData.company,
-        status: formData.status,
-        source: formData.source,
-        assigned_to: formData.assigned_to,
-        notes: formData.notes,
-      });
-    } else {
-      await dataService.createLead({
-        name: formData.name,
-        email: formData.email,
-        phone: formData.phone,
-        company: formData.company,
-        status: formData.status,
-        source: formData.source,
-        assigned_to: formData.assigned_to,
-        notes: formData.notes,
-      });
-    }
+    try {
+      if (editingLead) {
+        await dataService.updateLead(editingLead.id, {
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          company: formData.company,
+          status: formData.status,
+          source: formData.source,
+          assigned_to: formData.assigned_to,
+          notes: formData.notes,
+        });
+        addToast('Lead updated successfully!', 'success');
+      } else {
+        await dataService.createLead({
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          company: formData.company,
+          status: formData.status,
+          source: formData.source,
+          assigned_to: formData.assigned_to,
+          notes: formData.notes,
+        });
+        addToast('Lead created successfully!', 'success');
+      }
 
-    closeModal();
-    loadLeads();
+      closeModal();
+      loadLeads();
+    } catch {
+      addToast('An error occurred. Please try again.', 'error');
+    }
   }
 
   const getStatusVariant = (status: string) => {
@@ -217,7 +226,7 @@ export default function Leads() {
           </div>
         </div>
 
-        <Table columns={columns} data={filteredLeads} onRowClick={(row) => openModal(row as Lead)} />
+        <Table columns={columns} data={filteredLeads as unknown as Record<string, unknown>[]} onRowClick={(row) => openModal(row as unknown as Lead)} />
       </Card>
 
       <Modal isOpen={isModalOpen} onClose={closeModal} title={editingLead ? 'Edit Lead' : 'Add New Lead'} size="lg">
